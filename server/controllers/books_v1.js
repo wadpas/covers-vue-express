@@ -1,7 +1,7 @@
 const Book = require("../models/book")
 
 const getBooks = async (req, res) => {
-  const { title, author, genre, year } = req.query
+  const { title, author, genre, year, sort } = req.query
   const queryObject = {}
   if (title) {
     queryObject.title = { $regex: title, $options: "i" }
@@ -10,12 +10,20 @@ const getBooks = async (req, res) => {
     queryObject.author = { $regex: author, $options: "i" }
   }
   if (genre) {
-    queryObject.genre = { $regex: genre, $options: "i" }
+    queryObject.genre = genre
   }
   if (year) {
     queryObject.year = year
   }
-  const books = await Book.find(queryObject)
+  console.log(queryObject)
+  let result = Book.find(queryObject)
+  if (sort) {
+    const sortList = sort.split(",").join(" ")
+    result = result.sort(sortList)
+  } else {
+    result = result.sort("createdAt")
+  }
+  const books = await result
   res.status(200).json({ books, nbHits: books.length })
 }
 

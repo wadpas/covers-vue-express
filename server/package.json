@@ -1,10 +1,12 @@
 {
-  "name": "jobs",
+  "name": "riverside",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "dev": "nodemon server.js",
+    "client": "npm run dev --prefix ../client",
+    "start": "concurrently \"npm run dev\" \"npm run client\" "
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,7 @@
     "mongoose": "^8.8.2"
   },
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "nodemon": "^2.0.7"
   }
 }
