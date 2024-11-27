@@ -5,8 +5,13 @@
 
   <button v-on:click="setParams(2020)">2020</button>
   <button v-on:click="setParams(2024)">2024</button>
+  <button v-on:click="onLogin()">login</button>
 
   {{ books }}
+  <div>
+    <button v-on:click="fetchDashboard()">Dashboard</button>
+    {{ dashboard }}
+  </div>
 </template>
 
 <script setup>
@@ -18,6 +23,7 @@ const router = useRouter()
 const route = useRoute()
 
 let books = ref([])
+let dashboard = ref([])
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:3000/api/v1/",
@@ -51,6 +57,24 @@ watch(
     })
   }
 )
+
+async function onLogin() {
+  const { data } = await axiosInstance.post("auth/login", {
+    username: "ChristopherPike",
+    password: "ChristopherPike1",
+  })
+  localStorage.setItem("token", data.token)
+}
+
+async function fetchDashboard() {
+  const token = localStorage.getItem("token")
+  const { data } = await axiosInstance.get("/auth/dashboard", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  dashboard.value = data
+}
 
 onMounted(() => {
   console.log("home page mounted")
