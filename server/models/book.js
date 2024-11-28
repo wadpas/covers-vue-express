@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
 
-const bookSchema = new mongoose.Schema(
+const BookSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -45,8 +45,14 @@ const bookSchema = new mongoose.Schema(
       minlength: [3, "Cover can not be less than 3 characters"],
       trim: true,
     },
+    createdBy: {
+      type: mongoose.Types.ObjectId,
+      ref: "User",
+      required: [true, "Please provide a user"],
+      default: "67481a99c5a2fda0ac9d0302",
+    },
   },
   { timestamps: true }
 )
 
-module.exports = mongoose.model("Book", bookSchema)
+module.exports = mongoose.model("Book", BookSchema)

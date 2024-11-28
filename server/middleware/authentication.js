@@ -1,17 +1,19 @@
 const jwt = require("jsonwebtoken")
+const { UnauthenticatedError } = require("../errors")
 
 const authentication = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" })
-    }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = decoded
-    next()
-  } catch (error) {
-    return res.status(401).json({ message: "Unauthorized" })
+  const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new UnauthenticatedError("Authentication invalid")
   }
+  const token = authHeader.split(" ")[1]
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET)
+    req.user = { userId: payload.userId, username: payload.username, nickname: payload.nickname }
+  } catch (error) {
+    throw new UnauthenticatedError("Authentication invalid")
+  }
+  next()
 }
 
 module.exports = authentication
