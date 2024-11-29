@@ -3,9 +3,16 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 
 const UserSchema = new mongoose.Schema({
-  username: {
+  firstName: {
     type: String,
-    required: [true, "Please provide a username"],
+    required: [true, "Please provide a first name"],
+    maxlength: [20, "Name can not be more than 20 characters"],
+    minlength: [3, "Name can not be less than 3 characters"],
+    trim: true,
+  },
+  lastName: {
+    type: String,
+    required: [true, "Please provide a last name"],
     maxlength: [20, "Name can not be more than 20 characters"],
     minlength: [3, "Name can not be less than 3 characters"],
     trim: true,
@@ -35,6 +42,7 @@ const UserSchema = new mongoose.Schema({
 })
 
 UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return
   const salt = await bcrypt.genSalt(10)
   this.password = await bcrypt.hash(this.password, salt)
 })

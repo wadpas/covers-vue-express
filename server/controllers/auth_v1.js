@@ -15,17 +15,37 @@ const login = async (req, res) => {
   if (!isPasswordCorrect) {
     throw new UnauthenticatedError("Invalid Credentials")
   }
+  user.password = undefined
   const token = user.createJWT()
-  res.status(StatusCodes.OK).json({ token })
+  res.status(StatusCodes.OK).json({ user, token })
 }
 
 const register = async (req, res) => {
   const user = await User.create({ ...req.body })
+  user.password = undefined
   const token = user.createJWT()
-  res.status(StatusCodes.CREATED).json({ token })
+  res.status(StatusCodes.CREATED).json({ user, token })
+}
+
+const updateUser = async (req, res) => {
+  const { email, firstName, lastName, nickname } = req.body
+  if (!email || !firstName || !lastName || !nickname) {
+    throw new BadRequestError("Please provide email, first name, last name, and nickname")
+  }
+  const user = await User.findOneAndUpdate({ _id: req.user.userId }, req.body, {
+    new: true,
+    runValidators: true,
+  })
+  if (!user) {
+    throw new NotFoundError(`No user with id : ${req.user.userId}`)
+  }
+  user.password = undefined
+  const token = user.createJWT()
+  res.status(StatusCodes.OK).json({ user, token })
 }
 
 module.exports = {
   login,
   register,
+  updateUser,
 }

@@ -1,9 +1,48 @@
-const Book = require("../models/Book")
+const Book = require("../models/book")
 const { StatusCodes } = require("http-status-codes")
 const { BadRequestError, NotFoundError } = require("../errors/bad-request")
 
 const getBooks = async (req, res) => {
-  const books = await Book.find({}).sort("createdAt")
+  const { title, author, genre, year, sort } = req.query
+  const queryObject = {}
+
+  if (title) {
+    queryObject.title = { $regex: title, $options: "i" }
+  }
+  if (author) {
+    queryObject.author = { $regex: author, $options: "i" }
+  }
+  if (genre) {
+    queryObject.genre = genre
+  }
+  if (year) {
+    queryObject.year = year
+  }
+  let result = Book.find(queryObject)
+
+  if (sort === "latest") {
+    result = result.sort("-createdAt")
+  }
+  if (sort === "oldest") {
+    result = result.sort("createdAt")
+  }
+  if (sort === "a-z") {
+    result = result.sort("title")
+  }
+  if (sort === "z-a") {
+    result = result.sort("-title")
+  }
+
+  const page = Number(req.query.page) || 1
+  const limit = Number(req.query.limit) || 10
+  const skip = (page - 1) * limit
+  result = result.skip(skip).limit(limit)
+
+  const books = await result
+
+  const totalBooks = await Book.countDocuments(queryObject)
+  const numOfPages = Math.ceil(totalBooks / limit)
+
   res.status(StatusCodes.OK).json({ books, count: books.length })
 }
 
@@ -40,7 +79,7 @@ const deleteBook = async (req, res) => {
   if (!book) {
     throw new NotFoundError(`No book with id : ${bookId}`)
   }
-  res.status(StatusCodes.OK).json({ book })
+  res.status(StatusCodes.OK).json(`Remove book with id : ${bookId}`)
 }
 
 const addBooks = async (req, res) => {
