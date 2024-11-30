@@ -1,6 +1,8 @@
+const mongoose = require("mongoose")
+const moment = require("moment")
 const Book = require("../models/book")
 const { StatusCodes } = require("http-status-codes")
-const { BadRequestError, NotFoundError } = require("../errors/bad-request")
+const { BadRequestError, NotFoundError } = require("../errors/index")
 
 const getBooks = async (req, res) => {
   const { title, author, genre, year, sort } = req.query
@@ -88,6 +90,59 @@ const addBooks = async (req, res) => {
   res.status(200).json({ books })
 }
 
+const showStats = async (req, res) => {
+  let stats = await Book.aggregate([
+    {
+      $match: { createdBy: new mongoose.Types.ObjectId(req.user.userId) },
+    },
+    { $group: { _id: "$year", count: { $sum: 1 } } },
+  ])
+
+  stats = stats.reduce((acc, curr) => {
+    acc[curr._id] = curr.count
+    return acc
+  }, {})
+
+  let defaultStats = {
+    2018: stats["2018"] || 0,
+    2019: stats["2019"] || 0,
+    2020: stats["2020"] || 0,
+    2021: stats["2021"] || 0,
+    2022: stats["2022"] || 0,
+    2023: stats["2023"] || 0,
+    2024: stats["2024"] || 0,
+  }
+
+  let monthlyApplications = await Book.aggregate([
+    { $match: { createdBy: new mongoose.Types.ObjectId(req.user.userId) } },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { "_id.year": -1, "_id.month": -1 } },
+    { $limit: 6 },
+  ])
+
+  monthlyApplications = monthlyApplications.map((item) => {
+    const {
+      _id: { year, month },
+      count,
+    } = item
+    const date = moment()
+      .month(month - 1)
+      .year(year)
+      .format("MMM Y")
+    return { date, count }
+  })
+
+  res.status(StatusCodes.OK).json({ defaultStats, monthlyApplications })
+}
+
 module.exports = {
   getBooks,
   getBook,
@@ -95,4 +150,5 @@ module.exports = {
   updateBook,
   deleteBook,
   addBooks,
+  showStats,
 }
