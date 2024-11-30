@@ -1,8 +1,11 @@
+const cloudinary = require("cloudinary").v2
+const fs = require("fs")
+const path = require("path")
 const mongoose = require("mongoose")
 const moment = require("moment")
 const Book = require("../models/book")
 const { StatusCodes } = require("http-status-codes")
-const { BadRequestError, NotFoundError } = require("../errors/index")
+const { NotFoundError, BadRequestError } = require("../errors/index")
 
 const getBooks = async (req, res) => {
   const { title, author, genre, year, sort } = req.query
@@ -128,19 +131,51 @@ const showStats = async (req, res) => {
     { $limit: 6 },
   ])
 
-  monthlyApplications = monthlyApplications.map((item) => {
-    const {
-      _id: { year, month },
-      count,
-    } = item
-    const date = moment()
-      .month(month - 1)
-      .year(year)
-      .format("MMM Y")
-    return { date, count }
-  })
+  monthlyApplications = monthlyApplications
+    .map((item) => {
+      const {
+        _id: { year, month },
+        count,
+      } = item
+      const date = moment()
+        .month(month - 1)
+        .year(year)
+        .format("MMM Y")
+      return { date, count }
+    })
+    .reverse()
 
   res.status(StatusCodes.OK).json({ defaultStats, monthlyApplications })
+}
+
+const uploadImage = async (req, res) => {
+  if (!req.files) {
+    throw new BadRequestError("No File Uploaded")
+  }
+  let bookImage = req.files.image
+
+  if (!bookImage.mimetype.startsWith("image")) {
+    throw new BadRequestError("Please Upload Image")
+  }
+
+  const maxSize = 1024 * 1024
+  if (bookImage.size > maxSize) {
+    throw new BadRequestError("Please upload image smaller 1MB")
+  }
+  const imagePath = path.join(__dirname, "../public/uploads/" + `${bookImage.name}`)
+  await bookImage.mv(imagePath)
+  return res.status(StatusCodes.OK).json({ image: { src: `/uploads/${bookImage.name}` } })
+}
+
+const uploadCloudinary = async (req, res) => {
+  const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, {
+    use_filename: true,
+    folder: "file-upload",
+  })
+  console.log(result)
+
+  fs.unlinkSync(req.files.image.tempFilePath)
+  return res.status(StatusCodes.OK).json({ image: { src: result.secure_url } })
 }
 
 module.exports = {
@@ -151,4 +186,6 @@ module.exports = {
   deleteBook,
   addBooks,
   showStats,
+  uploadImage,
+  uploadCloudinary,
 }
