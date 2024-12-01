@@ -1,13 +1,16 @@
 const User = require("../models/User")
 const { StatusCodes } = require("http-status-codes")
 const { BadRequestError, UnauthenticatedError } = require("../errors")
+const { createJWT, attachCookiesToResponse } = require("../utils")
 
 const register = async (req, res) => {
+  req.body.role = "user"
   const user = await User.create({ ...req.body })
   user.password = undefined
-  const token = user.createJWT()
-  res.status(StatusCodes.CREATED).json({ user, token })
+  attachCookiesToResponse({ res, user })
+  res.status(StatusCodes.CREATED).json({ user })
 }
+
 const login = async (req, res) => {
   const { email, password } = req.body
   if (!email || !password) {
@@ -22,29 +25,20 @@ const login = async (req, res) => {
     throw new UnauthenticatedError("Invalid Credentials")
   }
   user.password = undefined
-  const token = user.createJWT()
-  res.status(StatusCodes.OK).json({ user, token })
+  attachCookiesToResponse({ res, user })
+  res.status(StatusCodes.OK).json({ user })
 }
 
 const updateUser = async (req, res) => {
-  const { email, firstName, lastName, nickname } = req.body
-  if (!email || !firstName || !lastName || !nickname) {
-    throw new BadRequestError("Please provide email, first name, last name, and nickname")
-  }
-  const user = await User.findOneAndUpdate({ _id: req.user.userId }, req.body, {
-    new: true,
-    runValidators: true,
-  })
-  if (!user) {
-    throw new NotFoundError(`No user with id : ${req.user.userId}`)
-  }
-  user.password = undefined
-  const token = user.createJWT()
-  res.status(StatusCodes.OK).json({ user, token })
+  res.send("update user")
 }
 
 const logout = async (req, res) => {
-  res.send("logout user")
+  res.cookie("token", "logout", {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  })
+  res.status(StatusCodes.OK).json({ msg: "user logged out!" })
 }
 
 module.exports = {
