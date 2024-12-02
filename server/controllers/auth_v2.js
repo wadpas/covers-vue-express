@@ -1,7 +1,7 @@
 const User = require("../models/User")
 const { StatusCodes } = require("http-status-codes")
 const { BadRequestError, UnauthenticatedError } = require("../errors")
-const { createJWT, attachCookiesToResponse } = require("../utils")
+const { attachCookiesToResponse } = require("../utils")
 
 const register = async (req, res) => {
   req.body.role = "user"
@@ -29,10 +29,6 @@ const login = async (req, res) => {
   res.status(StatusCodes.OK).json({ user })
 }
 
-const updateUser = async (req, res) => {
-  res.send("update user")
-}
-
 const logout = async (req, res) => {
   res.cookie("token", "logout", {
     httpOnly: true,
@@ -44,6 +40,5 @@ const logout = async (req, res) => {
 module.exports = {
   login,
   register,
-  updateUser,
   logout,
 }

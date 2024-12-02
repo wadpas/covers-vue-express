@@ -8,11 +8,12 @@ const fileUpload = require("express-fileupload")
 const cors = require("cors")
 const connectDB = require("./db/connect")
 const cloudinary = require("cloudinary").v2
-const books = require("./routes/books")
 const auth = require("./routes/auth")
+const users = require("./routes/users")
+const books = require("./routes/books")
 const notFound = require("./middleware/not-found")
 const errorHandler = require("./middleware/error-handler")
-const authentication = require("./middleware/authentication")
+const { authenticateUser } = require("./middleware/authentication")
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -27,7 +28,8 @@ app.use(cookieParser(process.env.JWT_SECRET))
 app.use(fileUpload({ useTempFiles: true }))
 app.use(morgan("tiny"))
 app.use("/api/v1/auth", auth)
-app.use("/api/v1/books", authentication, books)
+app.use("/api/v1/users", authenticateUser, users)
+app.use("/api/v1/books", books)
 app.use(notFound)
 app.use(errorHandler)
 

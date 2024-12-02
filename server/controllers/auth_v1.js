@@ -26,23 +26,6 @@ const login = async (req, res) => {
   res.status(StatusCodes.OK).json({ user, token })
 }
 
-const updateUser = async (req, res) => {
-  const { email, firstName, lastName, nickname } = req.body
-  if (!email || !firstName || !lastName || !nickname) {
-    throw new BadRequestError("Please provide email, first name, last name, and nickname")
-  }
-  const user = await User.findOneAndUpdate({ _id: req.user.userId }, req.body, {
-    new: true,
-    runValidators: true,
-  })
-  if (!user) {
-    throw new NotFoundError(`No user with id : ${req.user.userId}`)
-  }
-  user.password = undefined
-  const token = user.createJWT()
-  res.status(StatusCodes.OK).json({ user, token })
-}
-
 const logout = async (req, res) => {
   res.send("logout user")
 }
