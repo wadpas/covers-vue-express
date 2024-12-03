@@ -1,10 +1,19 @@
 const express = require("express")
 const router = express.Router()
-const { getBooks, getBook, createBook, updateBook, deleteBook, addBooks, showStats, uploadImage, uploadCloudinary } = require("../controllers/books_v1")
+const { authenticateUser, authorizeUser } = require("../middleware/authentication")
+const { getBooks, getBook, createBook, updateBook, deleteBook, uploadCover } = require("../controllers/books_v2")
 
-router.route("/").get(getBooks).post(createBook).put(addBooks)
-router.route("/stats").get(showStats)
-router.route("/upload").post(uploadCloudinary)
-router.route("/:id").get(getBook).patch(updateBook).delete(deleteBook)
+router
+  .route("/")
+  .get(getBooks)
+  .post([authenticateUser, authorizeUser("admin")], createBook)
+
+router.route("/uploadCover").post([authenticateUser, authorizeUser("admin")], uploadCover)
+
+router
+  .route("/:id")
+  .get(getBook)
+  .patch([authenticateUser, authorizeUser("admin")], updateBook)
+  .delete([authenticateUser, authorizeUser("admin")], deleteBook)
 
 module.exports = router

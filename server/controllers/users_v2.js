@@ -1,5 +1,5 @@
-const { StatusCodes } = require("http-status-codes")
 const User = require("../models/User")
+const { StatusCodes } = require("http-status-codes")
 const { BadRequestError, NotFoundError } = require("../errors")
 const { attachCookiesToResponse, checkPermissions } = require("../utils")
 
@@ -9,7 +9,8 @@ const getUsers = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-  const user = await User.findOne({ _id: req.params.id }).select("-password")
+  const { id: userId } = req.params
+  const user = await User.findOne({ _id: userId }).select("-password")
   if (!user) {
     throw new NotFoundError(`No user with id : ${req.params.id}`)
   }

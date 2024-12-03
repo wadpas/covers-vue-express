@@ -8,7 +8,7 @@ const { StatusCodes } = require("http-status-codes")
 const { NotFoundError, BadRequestError } = require("../errors/index")
 
 const getBooks = async (req, res) => {
-  const { title, author, genre, year, sort } = req.query
+  const { title, author, genre, year, sort, numericFilters } = req.query
   const queryObject = {}
 
   if (title) {
@@ -22,6 +22,26 @@ const getBooks = async (req, res) => {
   }
   if (year) {
     queryObject.year = year
+  }
+  if (numericFilters) {
+    const operatorMap = {
+      ">": "$gt",
+      ">=": "$gte",
+      "=": "$eq",
+      "<": "$lt",
+      "<=": "$lte",
+    }
+    const regEx = /\b(<|>|>=|=|<|<=)\b/g
+    let filters = numericFilters.replace(regEx, (match) => `-${operatorMap[match]}-`)
+
+    const options = ["year"]
+    filters = filters.split(",").forEach((item) => {
+      const [field, operator, value] = item.split("-")
+      console.log(field, operator, value)
+      if (options.includes(field)) {
+        queryObject[field] = { [operator]: Number(value) }
+      }
+    })
   }
   let result = Book.find(queryObject)
 
@@ -51,6 +71,12 @@ const getBooks = async (req, res) => {
   res.status(StatusCodes.OK).json({ books, count: books.length })
 }
 
+const createBook = async (req, res) => {
+  req.body.createdBy = req.user._id
+  const book = await Book.create(req.body)
+  res.status(StatusCodes.CREATED).json({ book })
+}
+
 const getBook = async (req, res) => {
   const { id: bookId } = req.params
   const book = await Book.findOne({ _id: bookId })
@@ -58,12 +84,6 @@ const getBook = async (req, res) => {
     throw new NotFoundError(`No book with id : ${bookId}`)
   }
   res.status(StatusCodes.OK).json({ book })
-}
-
-const createBook = async (req, res) => {
-  req.body.createdBy = req.user.userId
-  const book = await Book.create(req.body)
-  res.status(StatusCodes.CREATED).json({ book })
 }
 
 const updateBook = async (req, res) => {
@@ -96,7 +116,7 @@ const addBooks = async (req, res) => {
 const showStats = async (req, res) => {
   let stats = await Book.aggregate([
     {
-      $match: { createdBy: new mongoose.Types.ObjectId(req.user.userId) },
+      $match: { createdBy: new mongoose.Types.ObjectId(req.user._id) },
     },
     { $group: { _id: "$year", count: { $sum: 1 } } },
   ])
@@ -117,7 +137,7 @@ const showStats = async (req, res) => {
   }
 
   let monthlyApplications = await Book.aggregate([
-    { $match: { createdBy: new mongoose.Types.ObjectId(req.user.userId) } },
+    { $match: { createdBy: new mongoose.Types.ObjectId(req.user._id) } },
     {
       $group: {
         _id: {
@@ -152,19 +172,18 @@ const uploadImage = async (req, res) => {
   if (!req.files) {
     throw new BadRequestError("No File Uploaded")
   }
-  let bookImage = req.files.image
+  let bookCover = req.files.image
 
-  if (!bookImage.mimetype.startsWith("image")) {
+  if (!bookCover.mimetype.startsWith("image")) {
     throw new BadRequestError("Please Upload Image")
   }
-
   const maxSize = 1024 * 1024
-  if (bookImage.size > maxSize) {
+  if (bookCover.size > maxSize) {
     throw new BadRequestError("Please upload image smaller 1MB")
   }
-  const imagePath = path.join(__dirname, "../public/uploads/" + `${bookImage.name}`)
-  await bookImage.mv(imagePath)
-  return res.status(StatusCodes.OK).json({ image: { src: `/uploads/${bookImage.name}` } })
+  const imagePath = path.join(__dirname, "../public/uploads/" + `${bookCover.name}`)
+  await bookCover.mv(imagePath)
+  return res.status(StatusCodes.OK).json({ image: { src: `/uploads/${bookCover.name}` } })
 }
 
 const uploadCloudinary = async (req, res) => {
