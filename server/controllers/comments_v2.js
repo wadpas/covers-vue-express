@@ -5,7 +5,7 @@ const { BadRequestError, NotFoundError } = require("../errors")
 const { checkPermissions } = require("../utils")
 
 const getComments = async (req, res) => {
-  const comments = await Comments.find({}).sort("createdAt")
+  const comments = await Comments.find({}).populate({ path: "createdOn", select: "title" })
   res.status(StatusCodes.OK).json({ comments, count: comments.length })
 }
 
@@ -61,10 +61,17 @@ const deleteComment = async (req, res) => {
   res.status(StatusCodes.OK).json({ msg: "Success! Comment removed" })
 }
 
+const getProductComments = async (req, res) => {
+  const { id: bookId } = req.params
+  const comments = await Comments.find({ createdOn: bookId })
+  res.status(StatusCodes.OK).json({ comments, count: comments.length })
+}
+
 module.exports = {
   getComments,
   createComment,
   getComment,
   updateComment,
   deleteComment,
+  getProductComments,
 }

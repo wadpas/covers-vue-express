@@ -11,7 +11,7 @@ const BookSchema = new mongoose.Schema(
       unique: true,
     },
     author: {
-      type: String,
+      type: [String],
       required: [true, "Please provide an author"],
       maxlength: [200, "Author can not be more than 120 characters"],
       minlength: [3, "Author can not be less than 3 characters"],
@@ -45,14 +45,38 @@ const BookSchema = new mongoose.Schema(
       minlength: [3, "Cover can not be less than 3 characters"],
       trim: true,
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    numOfComments: {
+      type: Number,
+      default: 0,
+    },
     createdBy: {
       type: mongoose.Types.ObjectId,
       ref: "User",
       required: [true, "Please provide a user"],
-      default: "67481a99c5a2fda0ac9d0302",
+      default: "674d7be3c2bbfe615bfc79a3",
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 )
+
+BookSchema.virtual("comments", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "createdOn",
+  justOne: false,
+})
+
+BookSchema.pre("remove", async function (next) {
+  await this.model("Comment").deleteMany({ createdOn: this._id })
+  next()
+})
 
 module.exports = mongoose.model("Book", BookSchema)

@@ -15,7 +15,7 @@ const createBook = async (req, res) => {
 
 const getBook = async (req, res) => {
   const { id: bookId } = req.params
-  const book = await Book.findOne({ _id: bookId })
+  const book = await Book.findOne({ _id: bookId }).populate("comments")
   if (!book) {
     throw new NotFoundError(`No book with id : ${bookId}`)
   }
