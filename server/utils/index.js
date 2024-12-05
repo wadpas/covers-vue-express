@@ -1,9 +1,9 @@
 const { createJWT, isTokenValid, attachCookiesToResponse } = require("./jwt")
-const checkPermissions = require("./permissions")
+const authorizeById = require("./authorizeById")
 
 module.exports = {
   createJWT,
   isTokenValid,
   attachCookiesToResponse,
-  checkPermissions,
+  authorizeById,
 }

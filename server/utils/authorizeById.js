@@ -1,9 +1,9 @@
 const { UnauthorizedError } = require("../errors")
 
-const checkPermissions = (requestUser, resourceUser) => {
+const authorizeById = (requestUser, resourceUserId) => {
   if (requestUser.role === "admin") return
-  if (requestUser._id === resourceUser._id) return
+  if (requestUser._id === resourceUserId.toString()) return
   throw new UnauthorizedError("Not authorized to access this route")
 }
 
-module.exports = checkPermissions
+module.exports = authorizeById

@@ -2,7 +2,7 @@ const Comments = require("../models/comment")
 const Books = require("../models/book")
 const { StatusCodes } = require("http-status-codes")
 const { BadRequestError, NotFoundError } = require("../errors")
-const { checkPermissions } = require("../utils")
+const { authorizeById } = require("../utils")
 
 const getComments = async (req, res) => {
   const comments = await Comments.find({}).populate({ path: "createdOn", select: "title" })
@@ -43,7 +43,7 @@ const updateComment = async (req, res) => {
   if (!comment) {
     throw new NotFoundError(`No comment with id ${commentId}`)
   }
-  checkPermissions(req.user, comment.createdBy)
+  authorizeById(req.user, comment.createdBy)
   comment.rating = rating
   comment.text = text
   await comment.save()
@@ -56,7 +56,7 @@ const deleteComment = async (req, res) => {
   if (!comment) {
     throw new NotFoundError(`No comment with id ${commentId}`)
   }
-  checkPermissions(req.user, comment.createdBy)
+  authorizeById(req.user, comment.createdBy)
   await comment.remove()
   res.status(StatusCodes.OK).json({ msg: "Success! Comment removed" })
 }
